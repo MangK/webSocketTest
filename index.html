@@ -1,0 +1,124 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>激情网络聊天</title>
+</head>
+<body style="width: 100%;margin: 0px;padding: 0px">
+<div id="user" style="height:50px;width:96%;background:#EEEEEE;margin: 2%;">
+    <div id="cur_user" style="float: left;background: #4b97ff;height: 50px;"></div>
+    <div id="user_box"></div>
+</div>
+<div id="message_box" style="height:200px;width:96%;overflow:auto;background:#EEEEEE;margin: 2%;"></div>
+<div id="form_box" style="height:auto;width:96%;background:#EEEEEE;margin: 2%">
+        <textarea name="" id="text_data" rows="5"
+                  style="width: 96%;margin: 1%;padding: 1%;border: 0px;font-size: 15px"></textarea>
+    <button id="send_btn" onclick="send()"
+            style="background: #4b97ff;border: 0px;width: 70px;height: 30px;margin: 5px 1%;color: #fff;font-size: 15px;border-radius: 5px">
+        发送
+    </button>
+</div>
+</body>
+<script type="text/javascript">
+    ws = null;
+    user = null;
+    if ("WebSocket" in window) {
+        ws = conn("106.54.5.206", 5488)
+    } else {
+        // 浏览器不支持 WebSocket
+        alert("您的浏览器不支持 WebSocket!");
+    }
+
+    function conn(host, port) {
+        // 打开一个 web socket
+        ws = new WebSocket("ws://" + host + ":" + port);
+        ws.onopen;
+
+        ws.onmessage = function (evt) {
+            var msg = evt.data;
+            if (typeof msg === 'string') {
+                msg = JSON.parse(msg)
+            }
+            // console.log(msg);
+            appendHtmlEle(msg, msg.type)
+        };
+
+        return ws
+    }
+
+    function send() {
+        message = document.getElementById('text_data').value;
+        if (message) {
+            ws.send(message);
+            appendHtmlEle(message, 'send');
+        }
+        document.getElementById('text_data').value = ''
+    }
+
+    function appendHtmlEle(data, tpye) {
+        let box = document.getElementById('message_box');
+        let item = document.createElement("div");
+        let myDate = new Date();
+        let msg = '';
+        switch (tpye) {
+            case 'send':
+                msg += "<div style='margin: 5px;font-size: 25px'><img width='25' src='" + user.avatar + "'>: " + data + "   <span style='font-size: 15px;color: #ccc'>(" + myDate.toLocaleTimeString() + ")</span>" + "</div>";
+                break;
+            case 'message':
+                msg += "<div style='margin: 5px;font-size: 25px'><img width='25' src='" + data.user.avatar + "'><span style='font-size: 15px;color: #4b97ff'>" + data.user.name + "</span>: " + data.message + "   <span style='font-size: 15px;color: #ccc'>(" + myDate.toLocaleTimeString() + ")</span>" + "</div>";
+                break;
+            case 'conn':
+                userBox(data)
+                break;
+            case 'system':
+                break;
+            case 'add':
+                msg += "<div style='margin: 5px;font-size: 25px'><img width='25' src='" + data.user.avatar + "'><span style='font-size: 15px;color: #4b97ff'>" + data.user.name + "</span>: " + data.message + "   <span style='font-size: 15px;color: #ccc'>(" + myDate.toLocaleTimeString() + ")</span>" + "</div>";
+                userAdd(data);
+                break;
+            case 'close':
+                msg += "<div style='margin: 5px;font-size: 25px'><img width='25' src='" + data.user.avatar + "'><span style='font-size: 15px;color: #4b97ff'>" + data.user.name + "</span>: " + data.message + "   <span style='font-size: 15px;color: #ccc'>(" + myDate.toLocaleTimeString() + ")</span>" + "</div>";
+                userRemove(data.user.fd);
+                break;
+            default:
+                break
+        }
+        item.innerHTML = msg;
+        box.appendChild(item);
+        resetScroll();
+    }
+
+    function userAdd(data) {
+        let userBox = document.getElementById('user_box');
+        let newUser = document.createElement('img');
+        newUser.id = "user_" + data.user.fd;
+        newUser.width = 50;
+        newUser.src = data.user.avatar
+        userBox.appendChild(newUser)
+    }
+
+    function userRemove(data) {
+        let item = document.getElementById("user_" + data);
+        item.remove();
+    }
+
+    function userBox(data) {
+        let curUser = document.getElementById('cur_user');
+        curUser.innerHTML = "<img width='50' src=" + data.user.avatar + ">";
+        user = data.user
+        let item = '';
+        for (let i = 0; i < data.all.length; i++) {
+            if (user.fd !== data.all[i].fd) {
+                item += "<img id='user_" + data.all[i].fd + "' width='50' src=" + data.all[i].avatar + ">";
+            }
+        }
+        let userBox = document.getElementById('user_box');
+        userBox.innerHTML = item;
+    }
+
+    function resetScroll() {
+        let div = document.getElementById('message_box');
+        div.scrollTop = 1000000000000000;
+    }
+</script>
+</html>
