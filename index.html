@@ -23,7 +23,7 @@
     ws = null;
     user = null;
     if ("WebSocket" in window) {
-        ws = conn("127.0.0.1", 10000)
+        ws = conn("127.0.0.1", 8889)
     } else {
         // 浏览器不支持 WebSocket
         alert("您的浏览器不支持 WebSocket!");
